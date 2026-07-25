@@ -20,13 +20,39 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
-      - name: Setup Gradle
+      - name: Cache Gradle
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: gradle-${{ runner.os }}-${{ hashFiles('**/gradle/wrapper/gradle-wrapper.properties') }}
+          restore-keys: gradle-${{ runner.os }}-
+
+      # Optional: ensure Android SDK / build-tools / platform are installed.
+      # If your project requires specific Android SDK components in CI, enable and adjust the packages list below.
+      - name: Set up Android SDK (optional)
+        uses: android-actions/setup-android@v2
+        with:
+          api-levels: 33
+          build-tools: 33.0.2
+          components: build-tools;33.0.2,platforms;android-33,emulator
+        # If you don't have this action in your runner environment, remove this step and ensure the SDK is installed via other means.
+
+      - name: Setup Gradle (fallback)
         uses: gradle/actions/setup-gradle@v3
         with:
           gradle-version: '8.5'
 
-      - name: Build Debug APK
-        run: gradle assembleDebug --no-daemon
+      - name: Build Debug APK (use wrapper if present)
+        run: |
+          if [ -x "./gradlew" ]; then
+            echo "Using Gradle wrapper to build"
+            ./gradlew assembleDebug --no-daemon --stacktrace --info
+          else
+            echo "Gradle wrapper not found, falling back to system Gradle"
+            gradle assembleDebug --no-daemon --stacktrace --info
+          fi
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
