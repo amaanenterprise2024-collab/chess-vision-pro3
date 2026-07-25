@@ -1,0 +1,53 @@
+# Gradle files
+.gradle/
+build/
+*.apk
+*.aab
+
+# Local configuration file (sdk path, etc)
+local.properties
+
+# Android Studio
+.idea/
+*.iml
+.classpath
+.project
+.settings/
+*.iws
+*.ipr
+*.swp
+*~
+.DS_Store
+
+# Build output
+gen/
+out/
+
+# Kotlin
+kotlin_classes/
+.kotlin_classes/
+
+# Misc
+*.class
+*.log
+*.ctxt
+.mtj.tmp/
+*.jar
+*.war
+*.nar
+*.ear
+*.zip
+*.tar.gz
+*.rar
+
+# virtual machine crash logs
+hs_err_pid*
+
+# IDE specific files
+.vscode/
+.idea
+vsc_code/
+
+# OS files
+Thumbs.db
+.DS_Store
