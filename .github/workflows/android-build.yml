@@ -2,8 +2,7 @@ name: Build Android APK
 
 on:
   push:
-    branches:
-      - main
+    branches: [ main ]
   workflow_dispatch: {}
 
 jobs:
@@ -20,13 +19,35 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
-      - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v3
+      - name: Cache Gradle and Android SDK
+        uses: actions/cache@v4
         with:
-          gradle-version: '8.5'
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+            $HOME/.android
+            $HOME/Android/Sdk
+          key: gradle-android-cache-${{ runner.os }}-${{ hashFiles('**/gradle-wrapper.properties', '**/*.gradle*') }}
+          restore-keys: |
+            gradle-android-cache-${{ runner.os }}-
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-sdk@v2
+        with:
+          api-levels: '33'
+          build-tools: '33.0.2'
+          components: |
+            platform-tools
+            build-tools;33.0.2
+            platforms;android-33
+
+      - name: Ensure Gradle wrapper is executable
+        run: |
+          if [ -f ./gradlew ]; then chmod +x ./gradlew; fi
 
       - name: Build Debug APK
-        run: gradle assembleDebug --no-daemon
+        run: |
+          if [ -f ./gradlew ]; then ./gradlew assembleDebug --no-daemon --stacktrace; else gradle assembleDebug --no-daemon --stacktrace; fi
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
