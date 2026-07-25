@@ -1,61 +1,47 @@
 name: Build Android APK
-
 on:
   push:
-    branches:
-      - main
-  workflow_dispatch: {}
-
+    branches: [ main ]
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout Repository
+      - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Set up JDK 17
+      - name: Set up Java
         uses: actions/setup-java@v4
         with:
-          distribution: 'temurin'
+          distribution: temurin
           java-version: '17'
 
-      - name: Cache Gradle
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.gradle/caches
-            ~/.gradle/wrapper
-          key: gradle-${{ runner.os }}-${{ hashFiles('**/gradle/wrapper/gradle-wrapper.properties') }}
-          restore-keys: gradle-${{ runner.os }}-
-
-      # Optional: ensure Android SDK / build-tools / platform are installed.
-      # If your project requires specific Android SDK components in CI, enable and adjust the packages list below.
-      - name: Set up Android SDK (optional)
-        uses: android-actions/setup-android@v2
-        with:
-          api-levels: 33
-          build-tools: 33.0.2
-          components: build-tools;33.0.2,platforms;android-33,emulator
-        # If you don't have this action in your runner environment, remove this step and ensure the SDK is installed via other means.
-
-      - name: Setup Gradle (fallback)
-        uses: gradle/actions/setup-gradle@v3
-        with:
-          gradle-version: '8.5'
-
-      - name: Build Debug APK (use wrapper if present)
+      - name: Decode keystore
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
         run: |
-          if [ -x "./gradlew" ]; then
-            echo "Using Gradle wrapper to build"
-            ./gradlew assembleDebug --no-daemon --stacktrace --info
-          else
-            echo "Gradle wrapper not found, falling back to system Gradle"
-            gradle assembleDebug --no-daemon --stacktrace --info
+          if [ -n "$KEYSTORE_BASE64" ]; then
+            echo "$KEYSTORE_BASE64" | base64 -d > ./keystore.jks
           fi
 
-      - name: Upload APK Artifact
+      - name: Make gradlew executable
+        run: chmod +x ./gradlew
+
+      - name: Set up Android SDK (install build-tools and platforms)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y jq --no-install-recommends
+          yes | sdkmanager "platform-tools" "platforms;android-33" "build-tools;33.0.2"
+
+      - name: Build release APK
+        env:
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        run: |
+          ./gradlew clean assembleRelease --stacktrace
+
+      - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: app-debug-apk
-          path: app/build/outputs/apk/debug/app-debug.apk
+          name: apk
+          path: app/build/outputs/**/*.apk
