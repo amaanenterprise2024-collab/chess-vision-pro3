@@ -79,7 +79,8 @@ object PreferencesUtil {
 
     fun isAutoUpdateEnabled(context: Context): Boolean {
         val prefs = getEncryptedSharedPreferences(context)
-        return prefs.getBoolean(KEY_AUTO_UPDATE, true)
+        // changed default from true -> false
+        return prefs.getBoolean(KEY_AUTO_UPDATE, false)
     }
 
     fun clearAll(context: Context) {
