@@ -23,8 +23,18 @@ jobs:
             echo "$KEYSTORE_BASE64" | base64 -d > ./keystore.jks
           fi
 
-      - name: Make gradlew executable
-        run: chmod +x ./gradlew
+      - name: Locate and make gradlew executable
+        run: |
+          echo "Files at repo root:"
+          ls -la
+          echo "Searching for gradlew..."
+          GRADLEW=$(find . -maxdepth 6 -type f -name gradlew | head -n1)
+          if [ -z "$GRADLEW" ]; then
+            echo "gradlew not found — ensure the Gradle wrapper is committed to the repository."
+            exit 1
+          fi
+          chmod +x "$GRADLEW"
+          echo "GRADLEW=$GRADLEW" >> $GITHUB_ENV
 
       - name: Set up Android SDK (install build-tools and platforms)
         run: |
@@ -38,7 +48,8 @@ jobs:
           KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
         run: |
-          ./gradlew clean assembleRelease --stacktrace
+          echo "Using gradlew at: $GRADLEW"
+          "$GRADLEW" clean assembleRelease --stacktrace
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
