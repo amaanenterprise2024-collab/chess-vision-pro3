@@ -3,78 +3,95 @@ package com.example.chessvisionpro.api
 import com.example.chessvisionpro.model.Game
 import com.example.chessvisionpro.model.User
 import retrofit2.Response
-import retrofit2.http.*
+import retrofit2.http.GET
+import retrofit2.http.Header
+import retrofit2.http.Path
+import retrofit2.http.Query
+import retrofit2.http.Streaming
 
 interface LichessService {
-
     /**
-     * Get authenticated user's profile information
+     * Get the currently authenticated user's profile
      */
     @GET("/api/account")
     suspend fun getAccount(@Header("Authorization") token: String): Response<User>
 
     /**
-     * Get user's recent games
+     * Get a user's public profile
+     */
+    @GET("/api/user/{username}")
+    suspend fun getUserProfile(
+        @Path("username") username: String
+    ): Response<User>
+
+    /**
+     * Get a user's game history
      */
     @GET("/api/games/user/{username}")
     suspend fun getUserGames(
         @Path("username") username: String,
-        @Header("Authorization") token: String,
         @Query("max") max: Int = 50,
-        @Query("sort") sort: String = "dateDesc"
-    ): Response<String> // Returns NDJSON format
+        @Query("pgnInJson") pgnInJson: Boolean = true,
+        @Header("Authorization") token: String? = null
+    ): Response<String>
 
     /**
-     * Get game analysis
+     * Stream events (real-time updates)
      */
-    @GET("/api/games/{gameId}")
-    suspend fun getGame(
-        @Path("gameId") gameId: String,
-        @Header("Authorization") token: String
-    ): Response<Game>
-
-    /**
-     * Stream events (games, challenges, etc.)
-     */
+    @Streaming
     @GET("/api/stream/event")
     suspend fun streamEvents(
         @Header("Authorization") token: String
-    ): Response<String> // Server-Sent Events
+    ): Response<String>
 
     /**
-     * Get daily puzzle
+     * Get a specific game
+     */
+    @GET("/api/game/{gameId}")
+    suspend fun getGame(
+        @Path("gameId") gameId: String,
+        @Query("pgn") pgn: Boolean = true,
+        @Header("Authorization") token: String? = null
+    ): Response<String>
+
+    /**
+     * Get engine analysis (Stockfish)
+     */
+    @GET("/api/engine/analysis/{gameId}")
+    suspend fun getEngineAnalysis(
+        @Path("gameId") gameId: String,
+        @Query("multipv") multipv: Int = 1
+    ): Response<String>
+
+    /**
+     * Get daily puzzles
      */
     @GET("/api/puzzle/daily")
-    suspend fun getDailyPuzzle(
+    suspend fun getDailyPuzzle(): Response<String>
+
+    /**
+     * Get puzzle activity
+     */
+    @GET("/api/puzzle/activity")
+    suspend fun getPuzzleActivity(
+        @Query("max") max: Int = 50,
         @Header("Authorization") token: String
     ): Response<String>
 
     /**
-     * Get opening explorer stats for a position
+     * Get opening moves statistics
      */
-    @GET("/api/explorer/master")
+    @GET("/api/opening")
     suspend fun getOpeningStats(
         @Query("fen") fen: String,
-        @Header("Authorization") token: String
+        @Query("topGames") topGames: Int = 0,
+        @Query("recentGames") recentGames: Int = 0,
+        @Query("players") players: List<String>? = null
     ): Response<String>
 
     /**
-     * Request engine analysis for a position
+     * Validate if the server is running
      */
-    @POST("/api/engine/analyze")
-    suspend fun analyzePosition(
-        @Query("fen") fen: String,
-        @Query("depth") depth: Int = 20,
-        @Header("Authorization") token: String
-    ): Response<String>
-
-    /**
-     * Create a game challenge
-     */
-    @POST("/api/challenge/{username}")
-    suspend fun challengeUser(
-        @Path("username") username: String,
-        @QueryMap options: Map<String, String>,
-        @Header("Authorization") token: String
-    ): Response<String>
+    @GET("/api/status")
+    suspend fun getStatus(): Response<String>
 }

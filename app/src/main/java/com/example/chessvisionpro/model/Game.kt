@@ -1,42 +1,41 @@
 package com.example.chessvisionpro.model
 
+import androidx.room.Entity
+import androidx.room.PrimaryKey
 import com.google.gson.annotations.SerializedName
 
+@Entity(tableName = "games")
 data class Game(
+    @PrimaryKey
     val id: String,
+    val userId: String,
+    @SerializedName("created_at")
     val createdAt: Long,
-    val lastMoveAt: Long,
     val status: String,
-    val players: Players,
-    val pgn: String,
-    val opening: Opening? = null,
+    val speed: String,
+    val perf: String,
+    @SerializedName("white")
+    val whitePlayer: Player,
+    @SerializedName("black")
+    val blackPlayer: Player,
+    val initialFen: String,
     val moves: String,
-    val clock: Clock? = null,
+    val result: String?,
+    val winner: String?,
     val rated: Boolean,
     val variant: String,
-    val speed: String,
-    val perf: String
-)
+    val opening: Opening?,
+    val lastMoveAt: Long?
+) {
+    data class Player(
+        val userId: String,
+        val username: String,
+        val rating: Int,
+        val ratingDiff: Int?
+    )
 
-data class Players(
-    val white: Player,
-    val black: Player
-)
-
-data class Player(
-    val user: User? = null,
-    val rating: Int,
-    val ratingDiff: Int? = null
-)
-
-data class Opening(
-    val eco: String,
-    val name: String,
-    val ply: Int
-)
-
-data class Clock(
-    val initial: Int,
-    val increment: Int,
-    val totalTime: Int? = null
-)
+    data class Opening(
+        val eco: String,
+        val name: String
+    )
+}

@@ -1,34 +1,59 @@
 package com.example.chessvisionpro.model
 
+import androidx.room.Entity
+import androidx.room.PrimaryKey
 import com.google.gson.annotations.SerializedName
 
+@Entity(tableName = "users")
 data class User(
+    @PrimaryKey
     val id: String,
     val username: String,
-    val perfs: Map<String, PerfStats>,
+    val title: String?,
+    @SerializedName("created_at")
     val createdAt: Long,
-    val seenAt: Long? = null,
-    val patron: Boolean = false,
-    val verified: Boolean = false,
-    val title: String? = null,
-    @SerializedName("profile")
-    val profile: UserProfile? = null,
-    val gameCount: Int = 0,
-    val rating: Int = 0
-)
+    val profile: Profile?,
+    val perfs: Perfs,
+    @SerializedName("play_time")
+    val playTime: PlayTime?,
+    val nbFollowing: Int,
+    val nbFollowers: Int,
+    val online: Boolean?,
+    val tosViolation: Boolean?,
+    val patron: Boolean?,
+    val badges: List<Badge>?
+) {
+    data class Profile(
+        val bio: String?,
+        val country: String?,
+        val location: String?,
+        val firstName: String?,
+        val lastName: String?
+    )
 
-data class PerfStats(
-    val games: Int,
-    val rating: Int,
-    val rd: Int,
-    val prog: Int? = null,
-    val prov: Boolean = false
-)
+    data class Perfs(
+        val bullet: PerfStats?,
+        val blitz: PerfStats?,
+        val rapid: PerfStats?,
+        val classical: PerfStats?,
+        val puzzle: PerfStats?
+    )
 
-data class UserProfile(
-    val bio: String? = null,
-    val country: String? = null,
-    val firstName: String? = null,
-    val lastName: String? = null,
-    val location: String? = null
-)
+    data class PerfStats(
+        val games: Int,
+        val rating: Int,
+        val rd: Int,
+        val prov: String?,
+        val prog: Int?
+    )
+
+    data class PlayTime(
+        val total: Int,
+        val tv: Int
+    )
+
+    data class Badge(
+        val name: String,
+        val iconUrl: String
+    )
+}

@@ -1,71 +1,100 @@
 package com.example.chessvisionpro.viewmodel
 
+import android.app.Application
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.chessvisionpro.model.Game
 import com.example.chessvisionpro.repository.GameRepository
 import kotlinx.coroutines.launch
 
-class GameViewModel : ViewModel() {
+class GameViewModel(application: Application) : AndroidViewModel(application) {
+    private val repository = GameRepository(application)
 
-    private val gameRepository = GameRepository()
+    private val _gameList = MutableLiveData<List<Game>>()
+    val gameList: LiveData<List<Game>> = _gameList
 
-    private val _gamesLiveData = MutableLiveData<List<Game>>()
-    val gamesLiveData: LiveData<List<Game>> = _gamesLiveData
+    private val _currentGame = MutableLiveData<Game?>()
+    val currentGame: LiveData<Game?> = _currentGame
 
-    private val _currentGameLiveData = MutableLiveData<Game>()
-    val currentGameLiveData: LiveData<Game> = _currentGameLiveData
+    private val _engineAnalysis = MutableLiveData<String>()
+    val engineAnalysis: LiveData<String> = _engineAnalysis
 
-    private val _analysisResult = MutableLiveData<String>()
-    val analysisResult: LiveData<String> = _analysisResult
-
-    private val _error = MutableLiveData<String>()
-    val error: LiveData<String> = _error
+    private val _dailyPuzzle = MutableLiveData<String>()
+    val dailyPuzzle: LiveData<String> = _dailyPuzzle
 
     private val _loading = MutableLiveData(false)
     val loading: LiveData<Boolean> = _loading
 
-    fun fetchUserGames(username: String) {
+    private val _error = MutableLiveData<String?>()
+    val error: LiveData<String?> = _error
+
+    fun getUserGames(username: String, apiToken: String? = null, maxGames: Int = 50) {
         viewModelScope.launch {
-            _loading.postValue(true)
-            val result = gameRepository.getUserGames(username)
+            _loading.value = true
+            _error.value = null
+
+            val result = repository.getUserGames(username, apiToken, maxGames)
             result.onSuccess { games ->
-                _gamesLiveData.postValue(games)
-                _error.postValue("")
+                _gameList.value = games
+                _loading.value = false
             }.onFailure { exception ->
-                _error.postValue(exception.message ?: "Unknown error")
+                _error.value = exception.message
+                _loading.value = false
             }
-            _loading.postValue(false)
         }
     }
 
-    fun loadGame(gameId: String) {
+    fun getGame(gameId: String, apiToken: String? = null) {
         viewModelScope.launch {
-            _loading.postValue(true)
-            val result = gameRepository.getGameById(gameId)
+            _loading.value = true
+            _error.value = null
+
+            val result = repository.getGame(gameId, apiToken)
             result.onSuccess { game ->
-                _currentGameLiveData.postValue(game)
-                _error.postValue("")
+                _currentGame.value = game
+                _loading.value = false
             }.onFailure { exception ->
-                _error.postValue(exception.message ?: "Failed to load game")
+                _error.value = exception.message
+                _loading.value = false
             }
-            _loading.postValue(false)
         }
     }
 
-    fun analyzePosition(fen: String, depth: Int = 20) {
+    fun getEngineAnalysis(gameId: String) {
         viewModelScope.launch {
-            _loading.postValue(true)
-            val result = gameRepository.analyzePosition(fen, depth)
+            _loading.value = true
+            _error.value = null
+
+            val result = repository.getEngineAnalysis(gameId)
             result.onSuccess { analysis ->
-                _analysisResult.postValue(analysis)
-                _error.postValue("")
+                _engineAnalysis.value = analysis
+                _loading.value = false
             }.onFailure { exception ->
-                _error.postValue(exception.message ?: "Analysis failed")
+                _error.value = exception.message
+                _loading.value = false
             }
-            _loading.postValue(false)
         }
+    }
+
+    fun getDailyPuzzle() {
+        viewModelScope.launch {
+            _loading.value = true
+            _error.value = null
+
+            val result = repository.getDailyPuzzle()
+            result.onSuccess { puzzle ->
+                _dailyPuzzle.value = puzzle
+                _loading.value = false
+            }.onFailure { exception ->
+                _error.value = exception.message
+                _loading.value = false
+            }
+        }
+    }
+
+    fun clearError() {
+        _error.value = null
     }
 }
